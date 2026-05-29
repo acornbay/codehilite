@@ -218,7 +218,7 @@ export default function Sidebar({
               <input
                 type="range"
                 min="320"
-                max="820"
+                max="1400"
                 step="10"
                 value={settings.cardWidth}
                 onChange={(e) => updateSettings({ cardWidth: parseInt(e.target.value, 10) })}

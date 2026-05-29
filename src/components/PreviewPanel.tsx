@@ -300,7 +300,7 @@ export default function PreviewPanel({
   };
 
   return (
-    <section className="preview-panel flex flex-col flex-1 lg:max-w-[500px] bg-[var(--theme-bg)] h-full overflow-hidden shrink-0 z-10 transition-colors">
+    <section className="preview-panel flex flex-col flex-1 lg:max-w-[950px] bg-[var(--theme-bg)] h-full overflow-hidden shrink-0 z-10 transition-colors">
       {/* Export Toolbar */}
       <div className="flex items-center h-12 border-b border-[var(--theme-border)] bg-[var(--theme-panel)] px-4 select-none shrink-0 overflow-x-auto no-scrollbar gap-2">
         <div className="flex items-center gap-1.5 px-2.5 py-1 bg-indigo-500/10 rounded-full border border-indigo-500/20 mr-2 shrink-0">
