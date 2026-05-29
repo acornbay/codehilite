@@ -98,7 +98,26 @@ export default function PreviewPanel({
     setExporting(true);
     onShowToast(`Rendering high-DPI ${format.toUpperCase()} screenshot...`, true);
 
+    const cardEl = cardRef.current;
+    const originalWidth = cardEl.style.width;
+    const originalTransform = cardEl.style.transform;
+    const originalTransformOrigin = cardEl.style.transformOrigin;
+
     try {
+      // Clear scale transform for perfect capturing
+      cardEl.style.transform = 'none';
+      cardEl.style.transformOrigin = 'top left';
+
+      // If word wrap is disabled, let the card expand to fit the longest line of code
+      if (!settings.wordWrap) {
+        cardEl.style.width = 'max-content';
+        // Allow rendering reflow
+        await new Promise((r) => setTimeout(r, 50));
+        const scrollWidth = cardEl.scrollWidth;
+        // Apply exact width in pixels for accurate canvas calculation
+        cardEl.style.width = `${scrollWidth}px`;
+      }
+
       // Small pause to let thread breathe
       await new Promise((r) => setTimeout(r, 100));
       
@@ -114,9 +133,9 @@ export default function PreviewPanel({
 
       let dataUrl = '';
       if (format === 'png') {
-        dataUrl = await htmlToImage.toPng(cardRef.current, config);
+        dataUrl = await htmlToImage.toPng(cardEl, config);
       } else {
-        dataUrl = await htmlToImage.toJpeg(cardRef.current, { ...config, quality: 0.95 });
+        dataUrl = await htmlToImage.toJpeg(cardEl, { ...config, quality: 0.95 });
       }
 
       const a = document.createElement('a');
@@ -129,6 +148,11 @@ export default function PreviewPanel({
       console.error(err);
       onShowToast(`Export and capture failed: ${err.message || err}`, false);
     } finally {
+      if (cardEl) {
+        cardEl.style.width = originalWidth;
+        cardEl.style.transform = originalTransform;
+        cardEl.style.transformOrigin = originalTransformOrigin;
+      }
       setExporting(false);
     }
   };
@@ -139,13 +163,28 @@ export default function PreviewPanel({
     setExporting(true);
     onShowToast('Synthesizing PDF document...', true);
 
+    const cardEl = cardRef.current;
+    const originalWidth = cardEl.style.width;
+    const originalTransform = cardEl.style.transform;
+    const originalTransformOrigin = cardEl.style.transformOrigin;
+
     try {
+      cardEl.style.transform = 'none';
+      cardEl.style.transformOrigin = 'top left';
+
+      if (!settings.wordWrap) {
+        cardEl.style.width = 'max-content';
+        await new Promise((r) => setTimeout(r, 50));
+        const scrollWidth = cardEl.scrollWidth;
+        cardEl.style.width = `${scrollWidth}px`;
+      }
+
       await new Promise((r) => setTimeout(r, 100));
       
-      const width = cardRef.current.offsetWidth;
-      const height = cardRef.current.offsetHeight;
+      const width = cardEl.offsetWidth;
+      const height = cardEl.offsetHeight;
 
-      const dataUrl = await htmlToImage.toPng(cardRef.current, {
+      const dataUrl = await htmlToImage.toPng(cardEl, {
         pixelRatio: 2.2,
         style: {
           transform: 'scale(1)',
@@ -166,6 +205,11 @@ export default function PreviewPanel({
       console.error(err);
       onShowToast(`PDF assembly failed: ${err.message}`, false);
     } finally {
+      if (cardEl) {
+        cardEl.style.width = originalWidth;
+        cardEl.style.transform = originalTransform;
+        cardEl.style.transformOrigin = originalTransformOrigin;
+      }
       setExporting(false);
     }
   };
@@ -450,9 +494,9 @@ export default function PreviewPanel({
                     return (
                       <div
                         key={i}
-                        className={`flex items-start w-full select-text transition-colors ${
+                        className={`flex items-start select-text transition-colors ${
                           isLineHl ? 'code-line-hl' : 'hover:bg-white/[0.01]'
-                        }`}
+                        } ${settings.wordWrap ? 'w-full' : 'min-w-full w-max'}`}
                         style={{
                           minHeight: '1.5em',
                           paddingLeft: isLineHl 
@@ -475,7 +519,7 @@ export default function PreviewPanel({
                           </span>
                         )}
                         <span
-                          className="flex-1 select-text overflow-hidden"
+                          className={`flex-1 select-text ${settings.wordWrap ? 'overflow-hidden' : 'overflow-visible'}`}
                           style={{
                             fontFamily: settings.fontFamily,
                             fontSize: `${settings.fontSize}px`,
